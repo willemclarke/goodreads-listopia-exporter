@@ -22,29 +22,40 @@ interface Book {
 // contains all the data we want about the given book. Extract all desired data from the HTML and build up a list of objects [{}]
 // where each object is the book data for each url
 
-const parseBookUrls = (html: string) => {
-  const bookUrls: string[] = []
+const extractBookUrls = (html: string): string[] => {
+  const urls: string[] = []
   const $ = cheerio.load(html)
 
   $('a.bookTitle').each((i, elem) => {
     const url = $(elem).attr('href')
-    bookUrls.push(`https://www.goodreads.com${url}`)
+    urls.push(`https://www.goodreads.com${url}`)
   })
-  return bookUrls
+
+  return urls
 }
 
 const getBookList = () => {
   axios.get("https://www.goodreads.com/list/show/1.Best_Books_Ever").then((resp) => {
-    const test = parseBookUrls(resp.data)
-    console.log(test)
+    const bookUrls = extractBookUrls(resp.data)
+    const eachBookPage = getEachBook(bookUrls)
+
   }).catch((err) => {
     console.log(err)
   })
 }
 
+const getEachBook = (bookUrls: string[]) => {
+  return Bluebird.map(bookUrls, url => {
+    axios.get(url).then((resp) => {
+      console.log(resp.data)
+    }).catch((err) => {
+      console.log(err)
+    })
+  }, { concurrency: 25 })
+}
+
+
 getBookList()
-
-
 
 
 // const scrape = async () => {
