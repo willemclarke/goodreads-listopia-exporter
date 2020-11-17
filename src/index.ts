@@ -1,16 +1,16 @@
-import _ from "lodash"
-import cheerio from "cheerio"
-import axios from "axios"
-import Bluebird from "bluebird"
-import { sanitize } from "./utils"
+import _ from 'lodash';
+import cheerio from 'cheerio';
+import axios from 'axios';
+import Bluebird from 'bluebird';
+import { sanitize } from './utils';
 
 interface Book {
   bookTitle: string;
   authors: string;
   isbn13: string;
   rating: string;
-  numberOfRatings: string | undefined
-  numberOfReviews: string | undefined
+  numberOfRatings: string | undefined;
+  numberOfReviews: string | undefined;
   binding: string;
   numberOfPages: string;
 }
@@ -23,81 +23,77 @@ interface Book {
 // where each object is the book data for each url
 
 const extractBookUrls = (html: string): string[] => {
-  const urls: string[] = []
-  const $ = cheerio.load(html)
+  const urls: string[] = [];
+  const $ = cheerio.load(html);
 
   $('a.bookTitle').map((i, elem) => {
-    const url = $(elem).attr('href')
-    urls.push(`https://www.goodreads.com${url}`)
-  })
-  return urls
-}
+    const url = $(elem).attr('href');
+    urls.push(`https://www.goodreads.com${url}`);
+  });
+  return urls;
+};
 
-const extractBookData = (html: string): Book[] => {
-  const $ = cheerio.load(html)
-  const title = sanitize($('#bookTitle').text())
-  const bookSeries = sanitize($('#bookSeries').text())
-  const authors = sanitize($('a.authorName').text())
-  const rating = sanitize($('[itemprop="ratingValue"]').text())
-  const numberOfRatings = $('[itemprop="ratingCount"]').attr("content")
-  const numberOfReviews = $('[itemprop="reviewCount"]').attr("content")
-  const isbn13 = $('[itemprop="isbn"]').text() ? $('[itemprop="isbn"]').text() : "No ISBN13 found"
-  // const publisher = $('')
-  const binding = $('[itemprop="bookFormat"]').text()
-  const numberOfPages = $('[itemprop="numberOfPages"]').text().split(' ')[0]
+const extractBookData = (html: string): Book => {
+  const $ = cheerio.load(html);
+  const title = sanitize($('#bookTitle').text());
+  const bookSeries = sanitize($('#bookSeries').text());
+  const authors = sanitize($('a.authorName').text());
+  const rating = sanitize($('[itemprop="ratingValue"]').text());
+  const numberOfRatings = $('[itemprop="ratingCount"]').attr('content');
+  const numberOfReviews = $('[itemprop="reviewCount"]').attr('content');
+  const isbn13 = $('[itemprop="isbn"]').text() ? $('[itemprop="isbn"]').text() : 'No ISBN13 found';
+  const binding = $('[itemprop="bookFormat"]').text();
+  const numberOfPages = $('[itemprop="numberOfPages"]').text().split(' ')[0];
 
-  console.log([{
+  return {
     bookTitle: `${title} ${bookSeries}`,
-    authors,
+    authors: authors,
     isbn13,
     rating: `${rating}/5`,
     numberOfRatings,
     numberOfReviews,
     binding,
-    numberOfPages
-  }])
+    numberOfPages,
+  };
+};
 
-  return [
-    {
-      bookTitle: `${title} ${bookSeries}`,
-      authors: authors,
-      isbn13,
-      rating: `${rating}/5`,
-      numberOfRatings,
-      numberOfReviews,
-      binding,
-      numberOfPages
-    }
-  ]
+const writeToCsv = async (data: Bluebird<Book[]>) => {
+  const objectsToCsv = require('objects-to-csv');
+  const csv = new objectsToCsv(data);
+  await csv.toDisk('./test.csv');
+};
 
-
-}
-
-const getBookList = () => {
-  axios.get("https://www.goodreads.com/list/show/1.Best_Books_Ever").then((resp) => {
-    const bookUrls = extractBookUrls(resp.data)
-    const eachBookPage = getEachBook(bookUrls)
-    // const bookInfo = extractBookData(eachBookPage)
-
-  }).catch((err) => {
-    console.log(err)
-  })
-}
-
-const getEachBook = (bookUrls: string[]) => {
-  return Bluebird.map(bookUrls, url => {
-    axios.get(url).then((resp) => {
-      const bookInfo = extractBookData(resp.data)
-    }).catch((err) => {
-      console.log(err)
-      return err
+const listBookData = () => {
+  axios
+    .get('https://www.goodreads.com/list/show/1.Best_Books_Ever')
+    .then((resp) => {
+      const listOfBookUrls = extractBookUrls(resp.data);
+      const individualBookData = getEachBook(listOfBookUrls);
+      return writeToCsv(individualBookData);
     })
-  }, { concurrency: 25 })
-}
+    .catch((err) => {
+      console.log(err);
+    });
+};
 
-getBookList()
+const getEachBook = (bookUrls: string[]): Bluebird<Book[]> => {
+  return Bluebird.map(
+    bookUrls,
+    (url) => {
+      return axios
+        .get(url)
+        .then((resp) => {
+          const bookInfo = extractBookData(resp.data);
+          console.log(bookInfo);
+          return bookInfo;
+        })
+        .catch((err) => {
+          console.log(err);
+          return err;
+        });
+    },
+    { concurrency: 25 }
+  );
+};
 
-
-
-
-
+listBookData();
