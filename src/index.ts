@@ -86,7 +86,6 @@ const execute = async (goodreadsListUrl: string, fileName: string) => {
 const cli = async () => {
   const askForListUrl = await prompts({
     type: 'text',
-    initial: 'https://www.goodreads.com/list/show/',
     name: 'goodreadsListUrl',
     message: 'Please enter goodreads list url',
   });
@@ -100,5 +99,4 @@ const cli = async () => {
   return execute(askForListUrl.goodreadsListUrl, csvFilename.csvFilename);
 };
 
-// execute();
 cli();
