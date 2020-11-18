@@ -2,6 +2,7 @@ import _ from 'lodash';
 import cheerio from 'cheerio';
 import axios from 'axios';
 import Bluebird from 'bluebird';
+import prompts from 'prompts';
 import { sanitize } from './utils';
 
 interface Book {
@@ -62,26 +63,42 @@ const parseBook = (book: string): Book => {
   };
 };
 
-const asCsv = async (data: Book[]) => {
+const asCsv = async (data: Book[], fileName: string) => {
   const objectsToCsv = require('objects-to-csv');
   const csv = new objectsToCsv(data);
-  await csv.toDisk('./test.csv');
+  await csv.toDisk(`./${fileName}.csv`);
   console.log('writing book data to list...');
 };
 
-// execute will take in the url from the CLI prompt
-const execute = async () => {
+const execute = async (goodreadsListUrl: string, fileName: string) => {
   try {
-    const bookList = await getBookList(
-      'https://www.goodreads.com/list/show/146534.Florence_Williams_Books_to_Transport_You_to_Wild_Open_Spaces'
-    );
+    const bookList = await getBookList(goodreadsListUrl);
     const bookUrls = parseBookList(bookList);
-    const allBookPages = await Promise.all(_.map(bookUrls, (url) => getBook(url)));
-    const parsedBooks = _.map(allBookPages, (book) => parseBook(book));
-    const createCsv = await asCsv(parsedBooks);
+    const getEachBook = await Promise.all(_.map(bookUrls, (url) => getBook(url)));
+    const parsedBooks = _.map(getEachBook, (book) => parseBook(book));
+    const createCsv = await asCsv(parsedBooks, fileName);
+    console.log(`csv succesfully written to disk`);
   } catch (err) {
     console.log(err);
   }
 };
 
-execute();
+const cli = async () => {
+  const askForListUrl = await prompts({
+    type: 'text',
+    initial: 'https://www.goodreads.com/list/show/',
+    name: 'goodreadsListUrl',
+    message: 'Please enter goodreads list url',
+  });
+
+  const csvFilename = await prompts({
+    type: 'text',
+    name: 'csvFilename',
+    message: 'Please type the desired name of your .csv file',
+  });
+
+  return execute(askForListUrl.goodreadsListUrl, csvFilename.csvFilename);
+};
+
+// execute();
+cli();
