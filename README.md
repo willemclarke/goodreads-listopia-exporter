@@ -10,7 +10,7 @@ Simple command line interface to take a public goodreads listopia booklist url a
 - numberOfReviews
 - bookType - (e.g. Hardcover, Paperback, Kindle etc.)
 
-#### Currently only takes the data of the first _100_ books within a list (first page).
+### Currently only takes the data of the first _100_ books within a list (first page).
 
 - This was intended as a simple project to learn about web scraping, and as such I have not implemented pagination.
 - .csv file is saved in the location where the repository is cloned
