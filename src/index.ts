@@ -11,20 +11,21 @@ interface Book {
   rating: string;
   numberOfRatings: string | undefined;
   numberOfReviews: string | undefined;
-  binding: string;
+  bookType: string;
   numberOfPages: string;
 }
 
-// step 1: make a get request to a given goodreads list. this gives us a HTML file that contains a list of urls.
-// Extract each book url from the html and build ap an array of book urls
+interface HTML {
+  html: string;
+}
 
-// step 2: Given the list of book urls, for each url, make another get request. This gives us another html file that
-// contains all the data we want about the given book. Extract all desired data from the HTML and build up a list of objects [{}]
-// where each object is the book data for each url
+const getBookList = async (url: string): Promise<string> => {
+  return (await axios.get(url)).data;
+};
 
-const extractBookUrls = (html: string): string[] => {
+const parseBookList = (bookList: string): string[] => {
   const urls: string[] = [];
-  const $ = cheerio.load(html);
+  const $ = cheerio.load(bookList);
 
   $('a.bookTitle').map((i, elem) => {
     const url = $(elem).attr('href');
@@ -33,16 +34,20 @@ const extractBookUrls = (html: string): string[] => {
   return urls;
 };
 
-const extractBookData = (html: string): Book => {
-  const $ = cheerio.load(html);
+const getBook = async (url: string): Promise<string> => {
+  return (await axios.get(url)).data;
+};
+
+const parseBook = (book: string): Book => {
+  const $ = cheerio.load(book);
   const title = sanitize($('#bookTitle').text());
   const bookSeries = sanitize($('#bookSeries').text());
   const authors = sanitize($('a.authorName').text());
   const rating = sanitize($('[itemprop="ratingValue"]').text());
   const numberOfRatings = $('[itemprop="ratingCount"]').attr('content');
   const numberOfReviews = $('[itemprop="reviewCount"]').attr('content');
-  const isbn13 = $('[itemprop="isbn"]').text() ? $('[itemprop="isbn"]').text() : 'No ISBN13 found';
-  const binding = $('[itemprop="bookFormat"]').text();
+  const isbn13 = sanitize($('[itemprop="isbn"]').text() ? $('[itemprop="isbn"]').text() : 'No ISBN13 found');
+  const bookType = $('[itemprop="bookFormat"]').text();
   const numberOfPages = $('[itemprop="numberOfPages"]').text().split(' ')[0];
 
   return {
@@ -52,48 +57,31 @@ const extractBookData = (html: string): Book => {
     rating: `${rating}/5`,
     numberOfRatings,
     numberOfReviews,
-    binding,
+    bookType,
     numberOfPages,
   };
 };
 
-const writeToCsv = async (data: Bluebird<Book[]>) => {
+const asCsv = async (data: Book[]) => {
   const objectsToCsv = require('objects-to-csv');
   const csv = new objectsToCsv(data);
   await csv.toDisk('./test.csv');
+  console.log('writing book data to list...');
 };
 
-const listBookData = () => {
-  axios
-    .get('https://www.goodreads.com/list/show/1.Best_Books_Ever')
-    .then((resp) => {
-      const listOfBookUrls = extractBookUrls(resp.data);
-      const individualBookData = getEachBook(listOfBookUrls);
-      return writeToCsv(individualBookData);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+// execute will take in the url from the CLI prompt
+const execute = async () => {
+  try {
+    const bookList = await getBookList(
+      'https://www.goodreads.com/list/show/146534.Florence_Williams_Books_to_Transport_You_to_Wild_Open_Spaces'
+    );
+    const bookUrls = parseBookList(bookList);
+    const allBookPages = await Promise.all(_.map(bookUrls, (url) => getBook(url)));
+    const parsedBooks = _.map(allBookPages, (book) => parseBook(book));
+    const createCsv = await asCsv(parsedBooks);
+  } catch (err) {
+    console.log(err);
+  }
 };
 
-const getEachBook = (bookUrls: string[]): Bluebird<Book[]> => {
-  return Bluebird.map(
-    bookUrls,
-    (url) => {
-      return axios
-        .get(url)
-        .then((resp) => {
-          const bookInfo = extractBookData(resp.data);
-          console.log(bookInfo);
-          return bookInfo;
-        })
-        .catch((err) => {
-          console.log(err);
-          return err;
-        });
-    },
-    { concurrency: 25 }
-  );
-};
-
-listBookData();
+execute();
