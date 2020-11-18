@@ -3,6 +3,7 @@ import cheerio from 'cheerio';
 import axios from 'axios';
 import Bluebird from 'bluebird';
 import prompts from 'prompts';
+
 import { sanitize } from './utils';
 
 interface Book {
@@ -74,7 +75,7 @@ const execute = async (goodreadsListUrl: string, fileName: string) => {
   try {
     const bookList = await getBookList(goodreadsListUrl);
     const bookUrls = parseBookList(bookList);
-    const getEachBook = await Promise.all(_.map(bookUrls, (url) => getBook(url)));
+    const getEachBook = await Bluebird.map(bookUrls, (url) => getBook(url), { concurrency: 20 });
     const parsedBooks = _.map(getEachBook, (book) => parseBook(book));
     const createCsv = await asCsv(parsedBooks, fileName);
     console.log(`csv succesfully written to disk`);
