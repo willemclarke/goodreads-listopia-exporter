@@ -9,7 +9,7 @@ Simple command line interface to take a public goodreads listopia booklist url a
 - rating
 - numberOfRatings
 - numberOfReview
-- datePublishedAndPublisher - (Gives both the date published, and company book was published by)
+- datePublishedAndPublisher - (gives both the date published, and company book was published by if available)
 - bookType - (e.g. Hardcover, Paperback, Kindle etc.)
 
 ### Currently only takes the data of the first _100_ books within a list (first page).
