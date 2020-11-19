@@ -3,22 +3,20 @@ import cheerio from 'cheerio';
 import axios from 'axios';
 import Bluebird from 'bluebird';
 import prompts from 'prompts';
-
+import chalk from 'chalk';
 import { sanitize } from './utils';
 
 interface Book {
   bookTitle: string;
   authors: string;
   isbn13: string;
+  topGenre: string;
   rating: string;
   numberOfRatings: string | undefined;
   numberOfReviews: string | undefined;
+  datePublishedAndPublisher: string;
   bookType: string;
   numberOfPages: string;
-}
-
-interface HTML {
-  html: string;
 }
 
 const getBookList = async (url: string): Promise<string> => {
@@ -42,23 +40,33 @@ const getBook = async (url: string): Promise<string> => {
 
 const parseBook = (book: string): Book => {
   const $ = cheerio.load(book);
+
   const title = sanitize($('#bookTitle').text());
   const bookSeries = sanitize($('#bookSeries').text());
   const authors = sanitize($('a.authorName').text());
+  const isbn13 = $('[itemprop="isbn"]').text() ? sanitize($('[itemprop="isbn"]').text()) : 'No ISBN13 found';
+  const topGenre = sanitize($('a[class="actionLinkLite bookPageGenreLink"]').first().text());
   const rating = sanitize($('[itemprop="ratingValue"]').text());
   const numberOfRatings = $('[itemprop="ratingCount"]').attr('content');
   const numberOfReviews = $('[itemprop="reviewCount"]').attr('content');
-  const isbn13 = sanitize($('[itemprop="isbn"]').text() ? $('[itemprop="isbn"]').text() : 'No ISBN13 found');
+  const publisher = $('#details > div:nth-child(2)')
+    ? sanitize($('#details > div:nth-child(2)').text())
+    : 'No Publisher found';
+  const datePublishedAndPublisher = publisher.split('Published')[1];
   const bookType = $('[itemprop="bookFormat"]').text();
   const numberOfPages = $('[itemprop="numberOfPages"]').text().split(' ')[0];
+
+  console.log(chalk.cyan(`Parsing ${title}`));
 
   return {
     bookTitle: `${title} ${bookSeries}`,
     authors: authors,
     isbn13,
-    rating: `${rating}/5`,
+    topGenre,
+    rating,
     numberOfRatings,
     numberOfReviews,
+    datePublishedAndPublisher,
     bookType,
     numberOfPages,
   };
@@ -68,17 +76,16 @@ const asCsv = async (data: Book[], fileName: string) => {
   const objectsToCsv = require('objects-to-csv');
   const csv = new objectsToCsv(data);
   await csv.toDisk(`./${fileName}.csv`);
-  console.log('writing book data to list...');
+  console.log(chalk.whiteBright.bold(`Successfully written ${fileName}.csv to disk`));
 };
 
-const execute = async (goodreadsListUrl: string, fileName: string) => {
+const execute = async (goodreadsListUrl: string, fileName: string): Promise<void> => {
   try {
     const bookList = await getBookList(goodreadsListUrl);
     const bookUrls = parseBookList(bookList);
     const getEachBook = await Bluebird.map(bookUrls, (url) => getBook(url), { concurrency: 20 });
     const parsedBooks = _.map(getEachBook, (book) => parseBook(book));
     const createCsv = await asCsv(parsedBooks, fileName);
-    console.log(`csv succesfully written to disk`);
   } catch (err) {
     console.log(err);
   }

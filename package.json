@@ -12,6 +12,7 @@
   "devDependencies": {
     "@types/axios": "^0.14.0",
     "@types/bluebird": "^3.5.33",
+    "@types/chalk": "^2.2.0",
     "@types/cheerio": "^0.22.22",
     "@types/lodash": "^4.14.165",
     "@types/node": "^14.14.7",
@@ -23,6 +24,7 @@
   "dependencies": {
     "axios": "^0.21.0",
     "bluebird": "^3.7.2",
+    "chalk": "^4.1.0",
     "cheerio": "^1.0.0-rc.3",
     "csv": "^5.3.2",
     "lodash": "^4.17.20",
