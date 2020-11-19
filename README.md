@@ -27,4 +27,4 @@ Simple command line interface to take a public goodreads listopia booklist url a
 
 ## Example
 
-![CLI Example](https://i.gyazo.com/5281f3a2fea777993b4efbed440983d2.mp4)
+[![CLI Example](https://i.gyazo.com/5281f3a2fea777993b4efbed440983d2.mp4)](https://gyazo.com/5281f3a2fea777993b4efbed440983d2)
