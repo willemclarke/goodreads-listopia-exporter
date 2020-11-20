@@ -1,11 +1,11 @@
 ## goodreads-listopia-exporter
 
-Simple command line interface to take a public goodreads listopia booklist url and export the details below of each book within the list and download as a .csv
+Simple command line interface to take a public goodreadsbooklist url and export the details shown below of each book within the list and then download as a .csv file
 
 - bookTitle
 - authors
 - isbn13 - (depending on which edition of a book was entered into the list, the isbn13 may or may not be available)
-- topGenre - (top rated genre)
+- topGenre
 - rating
 - numberOfRatings
 - numberOfReview
@@ -14,7 +14,7 @@ Simple command line interface to take a public goodreads listopia booklist url a
 
 ### Currently only takes the data of the first _100_ books within a list (first page).
 
-- This was intended as a simple project to learn about web scraping, and as such I have not implemented pagination.
+- This was intended as a simple project to learn about web scraping, and as such I have not implemented support for pagination.
 - .csv file is saved in the location where the repository is cloned
 
 ## Usage:
