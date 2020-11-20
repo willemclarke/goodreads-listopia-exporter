@@ -29,7 +29,7 @@ Simple command line interface to take a public goodreads booklist url and export
 
 [![CLI Example](https://i.gyazo.com/5281f3a2fea777993b4efbed440983d2.gif)](https://gyazo.com/5281f3a2fea777993b4efbed440983d2)
 
-## Output (google spreadsheets)
+## Example output (google spreadsheets)
   <p float="left">
       <img src="https://i.gyazo.com/b5544fd9f80c7459330bba4f6a2f8f2a.png">
     </p>
