@@ -31,5 +31,5 @@ Simple command line interface to take a public goodreadsbooklist url and export 
 
 ## Output (google spreadsheets)
   <p float="left">
-      <img src="https://i.gyazo.com/3c533098d58860369e0aae1d5d8f8a2a.png">
+      <img src="https://i.gyazo.com/b5544fd9f80c7459330bba4f6a2f8f2a.png">
     </p>
