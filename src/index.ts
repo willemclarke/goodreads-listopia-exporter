@@ -6,7 +6,7 @@ import prompts from 'prompts';
 import chalk from 'chalk';
 import { sanitize } from './utils';
 
-interface Book {
+interface ParsedBook {
   bookTitle: string;
   authors: string;
   isbn13: string;
@@ -19,11 +19,15 @@ interface Book {
   numberOfPages: string;
 }
 
-const getBookList = async (url: string): Promise<string> => {
+type BookHtml = string;
+type BookListHtml = string;
+type BookUrls = string[];
+
+const getBookList = async (url: string): Promise<BookListHtml> => {
   return (await axios.get(url)).data;
 };
 
-const parseBookList = (bookList: string): string[] => {
+const parseBookList = (bookList: BookListHtml): BookUrls => {
   const urls: string[] = [];
   const $ = cheerio.load(bookList);
 
@@ -34,17 +38,19 @@ const parseBookList = (bookList: string): string[] => {
   return urls;
 };
 
-const getBook = async (url: string): Promise<string> => {
+const getBook = async (url: string): Promise<BookHtml> => {
   return (await axios.get(url)).data;
 };
 
-const parseBook = (book: string): Book => {
+const parseBook = (book: BookHtml): ParsedBook => {
   const $ = cheerio.load(book);
 
   const title = sanitize($('#bookTitle').text());
   const bookSeries = sanitize($('#bookSeries').text());
   const authors = sanitize($('a.authorName').text());
-  const isbn13 = $('[itemprop="isbn"]').text() ? sanitize($('[itemprop="isbn"]').text()) : 'No ISBN13 found';
+  const isbn13 = $('[itemprop="isbn"]').text()
+    ? sanitize($('[itemprop="isbn"]').text())
+    : 'No ISBN13 found';
   const topGenre = sanitize($('a[class="actionLinkLite bookPageGenreLink"]').first().text());
   const rating = sanitize($('[itemprop="ratingValue"]').text());
   const numberOfRatings = $('[itemprop="ratingCount"]').attr('content');
@@ -72,14 +78,14 @@ const parseBook = (book: string): Book => {
   };
 };
 
-const asCsv = async (data: Book[], fileName: string) => {
+const asCsv = async (data: ParsedBook[], fileName: string): Promise<void> => {
   const objectsToCsv = require('objects-to-csv');
   const csv = new objectsToCsv(data);
   await csv.toDisk(`./${fileName}.csv`);
-  console.log(chalk.whiteBright.bold(`Successfully written ${fileName}.csv to disk`));
+  console.log(chalk.whiteBright.bold(`Successfully written --> ${fileName}.csv <-- to disk`));
 };
 
-const execute = async (goodreadsListUrl: string, fileName: string): Promise<void> => {
+const run = async (goodreadsListUrl: string, fileName: string) => {
   try {
     const bookList = await getBookList(goodreadsListUrl);
     const bookUrls = parseBookList(bookList);
@@ -91,7 +97,7 @@ const execute = async (goodreadsListUrl: string, fileName: string): Promise<void
   }
 };
 
-const cli = async () => {
+const cli = async (): Promise<void> => {
   const askForListUrl = await prompts({
     type: 'text',
     name: 'goodreadsListUrl',
@@ -104,7 +110,7 @@ const cli = async () => {
     message: 'Please type the desired name of your .csv file',
   });
 
-  return execute(askForListUrl.goodreadsListUrl, csvFilename.csvFilename);
+  return run(askForListUrl.goodreadsListUrl, csvFilename.csvFilename);
 };
 
 cli();
