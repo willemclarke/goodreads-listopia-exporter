@@ -1,5 +1,8 @@
 ## goodreads-listopia-exporter
 
+Use this instead: https://github.com/willemclarke/reads-good
+This version was written pre goodreads facelift, and thus the selectors are no longer working. The `reads-good` impl supports pagination also
+
 Simple command line interface to take a public goodreads booklist url and export the details shown below of each book within the list and then download as a .csv file
 
 - bookTitle
